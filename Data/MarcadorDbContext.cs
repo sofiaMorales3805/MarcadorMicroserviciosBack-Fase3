@@ -16,10 +16,24 @@ public class MarcadorDbContext : DbContext
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
 
-        // Aquí configuramos las relaciones para evitar múltiples paths de cascada
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Equipo>().Property(e => e.Id).UseIdentityColumn(); // auto‑incrementa
+            // En OnModelCreating
+        modelBuilder.Entity<Equipo>(e =>
+        {
+        e.Property(x => x.Id).UseIdentityColumn();
+        e.Property(x => x.Nombre)        // evitamos cambios de tipo/tamaño
+        .IsRequired()
+        .HasColumnType("nvarchar(max)");
+        e.Property(x => x.Ciudad)        // <- ahora requerida
+        .IsRequired()
+        .HasMaxLength(80);
+        e.Property(x => x.LogoFileName).HasMaxLength(128);
+        });
+
+
+
             modelBuilder.Entity<MarcadorGlobal>()
                 .HasOne(m => m.EquipoLocal)
                 .WithMany()
@@ -53,5 +67,16 @@ public class MarcadorDbContext : DbContext
 
             modelBuilder.Entity<PartidoHistorico>()
                 .HasIndex(p => p.EquipoVisitanteId);
+
+            modelBuilder.Entity<Jugador>(j =>
+            {
+            j.Property(x => x.Id).UseIdentityColumn();
+            j.Property(x => x.Nombre).IsRequired().HasColumnType("nvarchar(max)");
+            j.Property(x => x.Posicion).HasMaxLength(40); // opcionalmente 40–60
+            j.HasOne(x => x.Equipo)
+            .WithMany(e => e.Jugadores)
+            .HasForeignKey(x => x.EquipoId)
+            .OnDelete(DeleteBehavior.Cascade);
+            });
         }
 }
