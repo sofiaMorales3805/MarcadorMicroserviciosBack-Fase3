@@ -10,36 +10,47 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
+// -------------------------
+// Servicios (DI)
+// -------------------------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configurar EF Core con SQL Server
+
+// EF Core
 builder.Services.AddDbContext<MarcadorDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Inyección de dependencias
+// Repos / Servicios propios
 builder.Services.AddScoped<MarcadorService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+
+// Storage de archivos (logos) y servicio de equipos
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<EquipoService>();
+
+//Servicio de jugadores
+builder.Services.AddScoped<JugadorService>();
 // CORS
-var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", builder =>
+    options.AddPolicy("CorsPolicy", policy =>
     {
-        builder.WithOrigins(allowedOrigins)
-               .AllowAnyHeader()
-               .AllowAnyMethod();
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 
+// Auth JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var keyBytes = Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? "YourSuperSecretKey123!");
 
@@ -64,27 +75,38 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// -------------------------
+// Build de la app
+// -------------------------
 var app = builder.Build();
 
-// Inicialización al arrancar la API
+// -------------------------
+// Migraciones + inicialización
+// -------------------------
 using (var scope = app.Services.CreateScope())
 {
-    var svc = scope.ServiceProvider.GetRequiredService<MarcadorService>();
+    var sp = scope.ServiceProvider;
+
+    // Aplica migraciones pendientes
+    var db = sp.GetRequiredService<MarcadorDbContext>();
+    db.Database.Migrate();
+
+    // Inicialización al arrancar (tu lógica)
+    var svc = sp.GetRequiredService<MarcadorService>();
     svc.InicializarEnCero();
 }
 
-// Apply DB migration and seed data
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<MarcadorDbContext>();
-    db.Database.Migrate();
-}
-
+// -------------------------
+// Pipeline HTTP
+// -------------------------
 app.UseCors("CorsPolicy");
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseAuthentication(); 
+app.UseStaticFiles();          
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
