@@ -26,26 +26,38 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponseDto?> AuthenticateAsync(LoginRequestDto request)
     {
-        var user = await _userRepository.GetByUsernameAsync(request.Username);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+        // Trae el usuario *con* su rol
+        var user = await _userRepository.GetByUsernameWithRoleAsync(request.Username);
+        if (user == null) return null;
+
+        // Verifica contraseña hasheada
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
             return null;
+
+        // Carga de respaldo por si el rol no vino (defensa extra)
+        if (user.Role == null)
+        {
+            var role = await _roleRepository.GetByIdAsync(user.RoleId);
+            if (role != null) user.Role = role;
+        }
 
         var token = GenerateJwtToken(user);
 
         return new LoginResponseDto
         {
             Username = user.Username,
-            Role = new RoleDto { Name = user.Role!.Name },
+            Role = new RoleDto { Name = user.Role?.Name ?? "User" },
             Token = token
         };
     }
 
-    public async Task<string?> RegisterAsync(RegisterRequestDto request)
+    public async Task<RegisterResponseDto?> RegisterAsync(RegisterRequestDto request)
     {
         var existingUser = await _userRepository.GetByUsernameAsync(request.Username);
         if (existingUser != null)
             return null;
-        var role = await _roleRepository.GetByNameAsync(request.Role.Name);
+
+        var role = await _roleRepository.GetByIdAsync(request.RoleId);
         if (role == null)
             return null;
 
@@ -59,7 +71,14 @@ public class AuthService : IAuthService
         };
 
         await _userRepository.AddAsync(user);
-        return "Usuario registrado correctamente.";
+
+        return new RegisterResponseDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            RoleName = role.Name,
+            Message = "Usuario registrado correctamente"
+        };
     }
 
     private string GenerateJwtToken(User user)
@@ -68,19 +87,23 @@ public class AuthService : IAuthService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? "YourSuperSecretKey123!"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+        var roleName = user.Role?.Name ?? "User";
+
         var claims = new[]
         {
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Role, user.Role!.Name)
             };
 
+        var minutes = int.TryParse(jwtSettings["ExpiresInMinutes"], out var m) ? m : 60;
+
         var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"],
-            audience: jwtSettings["Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"])),
-            signingCredentials: creds
-        );
+        issuer: jwtSettings["Issuer"],
+        audience: jwtSettings["Audience"],
+        claims: claims,
+        expires: DateTime.UtcNow.AddMinutes(minutes),
+        signingCredentials: creds
+    );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

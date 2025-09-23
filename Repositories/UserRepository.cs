@@ -18,11 +18,11 @@ public class UserRepository : IUserRepository
     /// <param name="username">Nombre de usuario (string requerido).</param>
     /// <param name="password">Contraseña del usuario (string requerida).</param>
     /// <returns>El usuario encontrado con su rol o <c>null</c> si no existe.</returns>
-    public async Task<User?> GetUserWithRoleAsync(string username, string password)
+    public async Task<User?> GetByUsernameWithRoleAsync(string username)
     {
         return await _context.Users
             .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+            .FirstOrDefaultAsync(u => u.Username == username);
     }
     /// <summary>
     /// Busca un usuario únicamente por su nombre de usuario.

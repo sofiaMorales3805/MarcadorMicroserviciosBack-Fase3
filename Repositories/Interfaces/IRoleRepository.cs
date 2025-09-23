@@ -5,14 +5,8 @@ namespace MarcadorFaseIIApi.Repositories.Interfaces
 {
     public interface IRoleRepository
     {
-        /// <summary>
-        /// Busca un rol por su nombre.
-        /// </summary>
+        Task<IEnumerable<Role>> GetAllAsync();
+        Task<Role?> GetByIdAsync(int id);
         Task<Role?> GetByNameAsync(string name);
-
-        /// <summary>
-        /// Agrega un rol nuevo desde un DTO.
-        /// </summary>
-        Task<Role> AddRoleAsync(RoleDto role);
     }
 }

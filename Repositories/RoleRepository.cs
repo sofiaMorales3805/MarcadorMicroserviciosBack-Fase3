@@ -27,5 +27,14 @@ public class RoleRepository(MarcadorDbContext context) : IRoleRepository
         return await _context.Roles.FirstOrDefaultAsync(r => r.Name == name);
     }
 
+    public async Task<Role?> GetByIdAsync(int id) { 
+        return await _context.Roles.FirstOrDefaultAsync(r => r.Id == id);
+    }
+
+    public async Task<IEnumerable<Role>> GetAllAsync()
+    {
+        return await _context.Roles.ToListAsync();
+    }
+
 }
 
