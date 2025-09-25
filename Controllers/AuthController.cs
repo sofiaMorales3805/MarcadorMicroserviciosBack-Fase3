@@ -3,6 +3,7 @@ using MarcadorFaseIIApi.Models;
 using MarcadorFaseIIApi.Services;
 using MarcadorFaseIIApi.Services.Interfaces;
 using MarcadorFaseIIApi.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MarcadorFaseIIApi.Controllers;
 
@@ -30,7 +31,21 @@ public class AuthController(IAuthService authService) : ControllerBase
         if (result == null)
             return BadRequest(new { message = "No se pudo registrar el usuario. Verifica el rol o si el usuario ya existe." });
 
-         return Ok(result); 
+        return Ok(result);
+    }
+
+    [HttpGet("validate")]
+    [Authorize]
+    public IActionResult ValidateToken()
+    {
+        return Ok(new { valid = true });
+    }
+    
+    [Authorize]
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        return Ok(new { message = "Sesión cerrada correctamente." });
     }
 
 }
