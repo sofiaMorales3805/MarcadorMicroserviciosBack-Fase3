@@ -6,6 +6,10 @@ using MarcadorFaseIIApi.Models.DTOs;
 
 namespace MarcadorFaseIIApi.Services
 {
+    /// <summary>
+    /// Servicio que mantiene el estado del marcador y reloj del partido.
+    /// Maneja puntos, faltas, tiempo, cuartos y cierre de partido.
+    /// </summary>
     public class MarcadorService
     {
         private const int DURACION_CUARTO_DEF = 600; // 10:00 por defecto
@@ -29,6 +33,9 @@ namespace MarcadorFaseIIApi.Services
         // Entidad persistida base
         private static MarcadorGlobal _marcador = null!;
 
+        /// <summary>
+        /// Inicializa el servicio y el estado inicial del marcador si no existe.
+        /// </summary>
         public MarcadorService(MarcadorDbContext context)
         {
             _context = context;
@@ -70,6 +77,9 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // ---------- Tiempo ----------
+        /// <summary>
+        /// Calcula el tiempo restante considerando si el reloj está corriendo.
+        /// </summary>
         private int TiempoActual()
         {
             if (!_corriendo) return Math.Max(0, _marcador!.TiempoRestante);
@@ -87,6 +97,9 @@ namespace MarcadorFaseIIApi.Services
             return restante;
         }
 
+        /// <summary>
+        /// Proyección del estado persistido hacia un objeto de lectura.
+        /// </summary>
         private MarcadorGlobal Proyeccion()
         {
             return new MarcadorGlobal
@@ -104,6 +117,9 @@ namespace MarcadorFaseIIApi.Services
             };
         }
 
+        /// <summary>
+        /// Obtiene la entidad equipo válida (local o visitante); lanza excepción si no es válido.
+        /// </summary>
         private Equipo ObtenerEquipo(string equipo)
         {
             if (string.Equals(equipo, "local", StringComparison.OrdinalIgnoreCase)) return _marcador.EquipoLocal;
@@ -113,11 +129,17 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // ---------- Lecturas ----------
+        /// <summary>
+        /// Retorna el estado del marcador actual.
+        /// </summary>
         public MarcadorGlobal GetMarcador()
         {
             lock (_lock) return Proyeccion();
         }
 
+        /// <summary>
+        /// Obtiene el estado del tiempo (reloj) con segundos restantes y duración.
+        /// </summary>
         public EstadoTiempoDto GetEstadoTiempo()
         {
             lock (_lock)
@@ -137,6 +159,9 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // ---------- Puntos ----------
+        /// <summary>
+        /// Suma puntos al equipo indicado.
+        /// </summary>
         public void SumarPuntos(string equipo, int puntos)
         {
             lock (_lock)
@@ -147,6 +172,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Resta puntos al equipo indicado sin bajar de cero.
+        /// </summary>
         public void RestarPuntos(string equipo, int puntos)
         {
             lock (_lock)
@@ -158,6 +186,9 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // ---------- Faltas ----------
+        /// <summary>
+        /// Registra una falta al equipo indicado.
+        /// </summary>
         public void RegistrarFalta(string equipo)
         {
             lock (_lock)
@@ -169,6 +200,9 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // ---------- Cuartos ----------
+        /// <summary>
+        /// Avanza de cuarto o gestiona prórrogas y cierre automático si corresponde.
+        /// </summary>
         public void AvanzarCuarto()
         {
             lock (_lock)
@@ -208,6 +242,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Avanza al siguiente cuarto o guarda cierre de partido si ya terminó.
+        /// </summary>
         public MarcadorGlobal SiguienteCuarto()
         {
             if (_marcador.CuartoActual < 4 || _marcador.EnProrroga)
@@ -222,6 +259,9 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // ---------- Tiempo ----------
+        /// <summary>
+        /// Inicia el reloj si está detenido.
+        /// </summary>
         public void IniciarReloj()
         {
             lock (_lock)
@@ -235,6 +275,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Pausa el reloj si está corriendo.
+        /// </summary>
         public void PausarReloj()
         {
             lock (_lock)
@@ -248,6 +291,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Establece el tiempo restante en segundos.
+        /// </summary>
         public MarcadorGlobal EstablecerTiempo(int segundos)
         {
             lock (_lock)
@@ -262,6 +308,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Reinicia el tiempo al valor indicado (por defecto 10 minutos).
+        /// </summary>
         public MarcadorGlobal ReiniciarTiempo(int segundos = DURACION_CUARTO_DEF)
         {
             lock (_lock)
@@ -281,6 +330,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Renombra equipos en la ficha activa.
+        /// </summary>
         public MarcadorGlobal RenombrarEquipos(string? nombreLocal, string? nombreVisitante)
         {
             lock (_lock)
@@ -295,6 +347,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Crea un nuevo partido (resetea puntos, faltas, cuarto y reloj).
+        /// </summary>
         public MarcadorGlobal NuevoPartido()
         {
             lock (_lock)
@@ -318,46 +373,18 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Termina el partido con motivo libre.
+        /// </summary>
         public MarcadorGlobal TerminarPartido(string? motivo)
         {
             GuardarCierrePartido("Terminado", motivo);
             return Proyeccion();
         }
 
-        private PartidoHistorico GuardarHistorico(string estado, string? motivo)
-        {
-            var h = new PartidoHistorico
-            {
-                Estado = estado,
-                EquipoLocalId = _marcador.EquipoLocalId,
-                EquipoVisitanteId = _marcador.EquipoVisitanteId,
-                NombreLocal = _marcador.EquipoLocal.Nombre,
-                NombreVisitante = _marcador.EquipoVisitante.Nombre,
-
-                PuntosLocal = _marcador.EquipoLocal.Puntos,
-                PuntosVisitante = _marcador.EquipoVisitante.Puntos,
-                FaltasLocal = _marcador.EquipoLocal.Faltas,
-                FaltasVisitante = _marcador.EquipoVisitante.Faltas,
-
-                Cuarto = _marcador.CuartoActual,
-                EnProrroga = _marcador.EnProrroga,
-                NumeroProrroga = _marcador.NumeroProrroga,
-
-                DuracionCuartoSeg = _duracionActualSeg,
-                TiempoFinalSeg = TiempoActual(),
-
-                MotivoFin = motivo
-            };
-
-            using var tx = _context.Database.BeginTransaction();
-            _context.PartidosHistoricos.Add(h);
-            _context.SaveChanges();
-            tx.Commit();
-            return h;
-        }
-
-        public enum EstadoPartido { Terminado = 1, Suspendido = 2, Cancelado = 3 }
-
+        /// <summary>
+        /// Crea un histórico y transacciona el cierre del partido con estado explícito.
+        /// </summary>
         public MarcadorGlobal TerminarPartido(EstadoPartido estado, string? motivo)
         {
             lock (_lock)
@@ -401,6 +428,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Guarda el cierre del partido (helper interno) y actualiza estadísticas.
+        /// </summary>
         private PartidoHistorico GuardarCierrePartido(string estado, string? motivo)
         {
             if (_corriendo)
@@ -448,6 +478,9 @@ namespace MarcadorFaseIIApi.Services
             return hist;
         }
 
+        /// <summary>
+        /// Renombra equipos creando nuevas entidades y actualizando referencias.
+        /// </summary>
         public MarcadorGlobal RenombrarCreandoNuevaFicha(string? nombreLocal, string? nombreVisitante)
         {
             lock (_lock)
@@ -475,6 +508,9 @@ namespace MarcadorFaseIIApi.Services
             }
         }
 
+        /// <summary>
+        /// Pone el marcador en cero (puntos, faltas, cuarto y tiempo).
+        /// </summary>
         public MarcadorGlobal InicializarEnCero()
         {
             lock (_lock)
@@ -504,8 +540,16 @@ namespace MarcadorFaseIIApi.Services
         }
 
         // Compatibilidad con rutas viejas
+        /// <summary>Alias de IniciarReloj (compatibilidad).</summary>
         public void IniciarTiempo() => IniciarReloj();
+        /// <summary>Alias de PausarReloj (compatibilidad).</summary>
         public void PausarTiempo() => PausarReloj();
+        /// <summary>Alias de IniciarReloj para reanudar (compatibilidad).</summary>
         public void ReanudarTiempo() => IniciarReloj();
+
+        /// <summary>
+        /// Estados posibles de un partido para cierre con estado explícito.
+        /// </summary>
+        public enum EstadoPartido { Terminado = 1, Suspendido = 2, Cancelado = 3 }
     }
 }

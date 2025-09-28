@@ -4,16 +4,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MarcadorFaseIIApi.Services;
 
+/// <summary>
+/// Servicio de dominio para gestión de jugadores (listados, paginación y CRUD).
+/// </summary>
 public class JugadorService
 {
     private readonly MarcadorDbContext _context;
 
+    /// <summary>
+    /// Crea una instancia del servicio de jugadores.
+    /// </summary>
     public JugadorService(MarcadorDbContext context)
     {
         _context = context;
     }
 
-    // LISTA con filtros (nombre, equipoNombre, equipoId, posicion)
+    /// <summary>
+    /// Lista jugadores con filtros opcionales (nombre, equipo por nombre o id, posición).
+    /// </summary>
     public async Task<List<Jugador>> GetListAsync(
         string? search, string? equipoNombre, int? equipoId, string? posicion, CancellationToken ct = default)
     {
@@ -44,7 +52,9 @@ public class JugadorService
         return await q.OrderBy(j => j.Nombre).ToListAsync(ct);
     }
 
-    // Paginado + ordenamiento
+    /// <summary>
+    /// Devuelve jugadores paginados con filtros y ordenamiento.
+    /// </summary>
     public async Task<(List<Jugador> Items, int Total)> GetPagedAsync(
         string? search, string? equipoNombre, int? equipoId, string? posicion,
         string? sortBy, bool asc, int page, int pageSize, CancellationToken ct = default)
@@ -76,11 +86,11 @@ public class JugadorService
         sortBy = (sortBy ?? "nombre").ToLower();
         q = sortBy switch
         {
-            "equipo"    => asc ? q.OrderBy(j => j.Equipo!.Nombre) : q.OrderByDescending(j => j.Equipo!.Nombre),
-            "posicion"  => asc ? q.OrderBy(j => j.Posicion)      : q.OrderByDescending(j => j.Posicion),
-            "puntos"    => asc ? q.OrderBy(j => j.Puntos)        : q.OrderByDescending(j => j.Puntos),
-            "faltas"    => asc ? q.OrderBy(j => j.Faltas)        : q.OrderByDescending(j => j.Faltas),
-            _           => asc ? q.OrderBy(j => j.Nombre)        : q.OrderByDescending(j => j.Nombre),
+            "equipo" => asc ? q.OrderBy(j => j.Equipo!.Nombre) : q.OrderByDescending(j => j.Equipo!.Nombre),
+            "posicion" => asc ? q.OrderBy(j => j.Posicion) : q.OrderByDescending(j => j.Posicion),
+            "puntos" => asc ? q.OrderBy(j => j.Puntos) : q.OrderByDescending(j => j.Puntos),
+            "faltas" => asc ? q.OrderBy(j => j.Faltas) : q.OrderByDescending(j => j.Faltas),
+            _ => asc ? q.OrderBy(j => j.Nombre) : q.OrderByDescending(j => j.Nombre),
         };
 
         var total = await q.CountAsync(ct);
@@ -88,22 +98,33 @@ public class JugadorService
         return (items, total);
     }
 
+    /// <summary>
+    /// Obtiene un jugador por id (incluye equipo).
+    /// </summary>
     public Task<Jugador?> GetByIdAsync(int id, CancellationToken ct = default)
         => _context.Jugadores.AsNoTracking().Include(j => j.Equipo).FirstOrDefaultAsync(j => j.Id == id, ct);
 
-    // Evitar duplicado de nombre dentro del mismo equipo (case-insensitive)
+    /// <summary>
+    /// Verifica duplicado de nombre dentro del mismo equipo.
+    /// </summary>
     public Task<bool> ExistsNombreInEquipoAsync(string nombre, int equipoId, CancellationToken ct = default)
     {
         var n = nombre.Trim().ToLower();
         return _context.Jugadores.AnyAsync(j => j.EquipoId == equipoId && j.Nombre.ToLower() == n, ct);
     }
 
+    /// <summary>
+    /// Verifica duplicado de nombre en el equipo excluyendo un id.
+    /// </summary>
     public Task<bool> ExistsNombreInEquipoExceptIdAsync(int id, string nombre, int equipoId, CancellationToken ct = default)
     {
         var n = nombre.Trim().ToLower();
         return _context.Jugadores.AnyAsync(j => j.Id != id && j.EquipoId == equipoId && j.Nombre.ToLower() == n, ct);
     }
 
+    /// <summary>
+    /// Crea un jugador nuevo.
+    /// </summary>
     public async Task<Jugador> CreateAsync(string nombre, int equipoId, string? posicion, CancellationToken ct = default)
     {
         if (await ExistsNombreInEquipoAsync(nombre, equipoId, ct))
@@ -123,6 +144,9 @@ public class JugadorService
         return jugador;
     }
 
+    /// <summary>
+    /// Actualiza un jugador existente.
+    /// </summary>
     public async Task<Jugador?> UpdateAsync(int id, string nombre, int equipoId, string? posicion, CancellationToken ct = default)
     {
         var jugador = await _context.Jugadores.FirstOrDefaultAsync(j => j.Id == id, ct);
@@ -139,6 +163,9 @@ public class JugadorService
         return jugador;
     }
 
+    /// <summary>
+    /// Elimina un jugador por id.
+    /// </summary>
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
         var jugador = await _context.Jugadores.FirstOrDefaultAsync(j => j.Id == id, ct);

@@ -8,12 +8,19 @@ using MarcadorFaseIIApi.Models.DTOs.Common;
 
 namespace MarcadorFaseIIApi.Constrollers
 {
+    /// <summary>
+    /// Gestión de jugadores: listado, detalle, paginación y CRUD (con autorización en entorno no-DEBUG).
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class JugadoresController : ControllerBase
     {
         private readonly JugadorService _service;
 
+        /// <summary>
+        /// Crea el controlador de jugadores con su servicio de dominio.
+        /// </summary>
+        /// <param name="service">Servicio de jugadores.</param>
         public JugadoresController(JugadorService service)
         {
             _service = service;
@@ -21,6 +28,15 @@ namespace MarcadorFaseIIApi.Constrollers
 
         // ---------- GETs ----------
 
+        /// <summary>
+        /// Lista jugadores con filtros opcionales.
+        /// </summary>
+        /// <param name="search">Texto de búsqueda.</param>
+        /// <param name="equipoNombre">Nombre del equipo.</param>
+        /// <param name="equipoId">Id del equipo.</param>
+        /// <param name="posicion">Posición del jugador.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>200 con colección de <see cref="JugadorResponseDto"/>.</returns>
         // GET api/jugadores?search=&equipoNombre=&equipoId=&posicion=
         [HttpGet]
         public async Task<ActionResult<IEnumerable<JugadorResponseDto>>> Get(
@@ -34,6 +50,12 @@ namespace MarcadorFaseIIApi.Constrollers
             return Ok(list.Select(ToDto));
         }
 
+        /// <summary>
+        /// Obtiene un jugador por id.
+        /// </summary>
+        /// <param name="id">Id del jugador.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>200 con jugador; 404 si no existe.</returns>
         // GET api/jugadores/{id}
         [HttpGet("{id:int}")]
         public async Task<ActionResult<JugadorResponseDto>> GetById(int id, CancellationToken ct)
@@ -43,6 +65,19 @@ namespace MarcadorFaseIIApi.Constrollers
             return Ok(ToDto(j));
         }
 
+        /// <summary>
+        /// Devuelve jugadores paginados con filtros y ordenamiento.
+        /// </summary>
+        /// <param name="page">Página (>=1).</param>
+        /// <param name="pageSize">Tamaño de página.</param>
+        /// <param name="search">Texto de búsqueda.</param>
+        /// <param name="equipoNombre">Nombre del equipo.</param>
+        /// <param name="equipoId">Id del equipo.</param>
+        /// <param name="posicion">Posición del jugador.</param>
+        /// <param name="sortBy">Campo de ordenamiento.</param>
+        /// <param name="sortDir">Dirección: <c>asc</c> / <c>desc</c>.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>200 con <see cref="PagedResult{T}"/> de <see cref="JugadorResponseDto"/>.</returns>
         // GET api/jugadores/paged
         [HttpGet("paged")]
         public async Task<ActionResult<PagedResult<JugadorResponseDto>>> GetPaged(
@@ -67,11 +102,17 @@ namespace MarcadorFaseIIApi.Constrollers
 
         // ---------- Mutaciones (auth desactivada en DEBUG) ----------
 
-        #if DEBUG
+        /// <summary>
+        /// Crea un jugador.
+        /// </summary>
+        /// <param name="dto">DTO con datos del jugador.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>201 con jugador creado; 409 si ya existe uno con el mismo nombre (según validación de servicio).</returns>
+#if DEBUG
         [AllowAnonymous]
-        #else
+#else
         [Authorize(Roles = "Admin")]
-        #endif
+#endif
         [HttpPost]
         public async Task<ActionResult<JugadorResponseDto>> Create([FromBody] JugadorCreateDto dto, CancellationToken ct)
         {
@@ -86,11 +127,18 @@ namespace MarcadorFaseIIApi.Constrollers
             }
         }
 
-        #if DEBUG
+        /// <summary>
+        /// Actualiza un jugador existente.
+        /// </summary>
+        /// <param name="id">Id del jugador.</param>
+        /// <param name="dto">DTO con datos a actualizar.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>200 con jugador; 404 si no existe; 409 si conflicto por duplicidad (según servicio).</returns>
+#if DEBUG
         [AllowAnonymous]
-        #else
+#else
         [Authorize(Roles = "Admin")]
-        #endif
+#endif
         [HttpPut("{id:int}")]
         public async Task<ActionResult<JugadorResponseDto>> Update(int id, [FromBody] JugadorUpdateDto dto, CancellationToken ct)
         {
@@ -106,11 +154,17 @@ namespace MarcadorFaseIIApi.Constrollers
             }
         }
 
-        #if DEBUG
+        /// <summary>
+        /// Elimina un jugador por id.
+        /// </summary>
+        /// <param name="id">Id del jugador.</param>
+        /// <param name="ct">Token de cancelación.</param>
+        /// <returns>204 si se elimina; 404 si no existe.</returns>
+#if DEBUG
         [AllowAnonymous]
-        #else
+#else
         [Authorize(Roles = "Admin")]
-        #endif
+#endif
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
@@ -120,6 +174,9 @@ namespace MarcadorFaseIIApi.Constrollers
         }
 
         // ---------- Helper ----------
+        /// <summary>
+        /// Proyección de <see cref="Jugador"/> a <see cref="JugadorResponseDto"/>.
+        /// </summary>
         private static JugadorResponseDto ToDto(Jugador j) => new()
         {
             Id = j.Id,
