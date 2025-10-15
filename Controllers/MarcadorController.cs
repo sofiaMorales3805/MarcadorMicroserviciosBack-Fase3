@@ -260,6 +260,14 @@ public class MarcadorController : ControllerBase
     [HttpPost("nuevo")]
     public ActionResult<MarcadorGlobal> Nuevo() => Ok(_service.NuevoPartido());
 
+    /// <summary>
+    /// Inicializa el marcador con un partido específico del historial.
+    /// </summary>
+    /// <param name="partidoId">ID del partido a cargar.</param>
+    /// <returns>200 con <see cref="MarcadorGlobal"/> inicializado.</returns>
+    [HttpPost("inicializar/{partidoId:int}")]
+    public ActionResult<MarcadorGlobal> InicializarConPartido(int partidoId) => Ok(_service.InicializarConPartido(partidoId));
+
     // -------- helpers --------
 
     /// <summary>

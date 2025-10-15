@@ -9,4 +9,11 @@ public class JugadorResponseDto
     public string? Posicion { get; set; }
     public int EquipoId { get; set; }
     public string EquipoNombre { get; set; } = string.Empty;
+    public int? Numero { get; set; }         
+    public int? Edad { get; set; }          
+    public int Estatura { get; set; }    
+    public string? Nacionalidad { get; set; } 
+
+    
+
 }

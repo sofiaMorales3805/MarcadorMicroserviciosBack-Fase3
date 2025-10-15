@@ -49,8 +49,8 @@ namespace MarcadorFaseIIApi.Services
                         .Include(m => m.EquipoVisitante)
                         .FirstOrDefault() ?? new MarcadorGlobal
                         {
-                            EquipoLocal = new Equipo { Nombre = "Local", Puntos = 0, Faltas = 0, Jugadores = new() },
-                            EquipoVisitante = new Equipo { Nombre = "Visitante", Puntos = 0, Faltas = 0, Jugadores = new() },
+                            EquipoLocal = new Equipo { Nombre = "Equipo A", Puntos = 0, Faltas = 0, Jugadores = new() },
+                            EquipoVisitante = new Equipo { Nombre = "Equipo B", Puntos = 0, Faltas = 0, Jugadores = new() },
                             CuartoActual = 1,
                             TiempoRestante = DURACION_CUARTO_DEF,
                             EnProrroga = false,
@@ -65,8 +65,8 @@ namespace MarcadorFaseIIApi.Services
                     }
 
                     // saneos
-                    _marcador.EquipoLocal ??= new Equipo { Nombre = "Local", Puntos = 0, Faltas = 0, Jugadores = new() };
-                    _marcador.EquipoVisitante ??= new Equipo { Nombre = "Visitante", Puntos = 0, Faltas = 0, Jugadores = new() };
+                    _marcador.EquipoLocal ??= new Equipo { Nombre = "Equipo A", Puntos = 0, Faltas = 0, Jugadores = new() };
+                    _marcador.EquipoVisitante ??= new Equipo { Nombre = "Equipo B", Puntos = 0, Faltas = 0, Jugadores = new() };
                     if (_marcador.CuartoActual <= 0) _marcador.CuartoActual = 1;
                     if (_marcador.TiempoRestante < 0) _marcador.TiempoRestante = 0;
 
@@ -374,6 +374,44 @@ namespace MarcadorFaseIIApi.Services
         }
 
         /// <summary>
+        /// Inicializa el marcador con los equipos de un partido específico.
+        /// </summary>
+        public MarcadorGlobal InicializarConPartido(int partidoId)
+        {
+            lock (_lock)
+            {
+                var partido = _context.Partidos.FirstOrDefault(p => p.Id == partidoId);
+                if (partido == null)
+                    throw new ArgumentException($"Partido con ID {partidoId} no encontrado.");
+
+                var equipoLocal = _context.Equipos.FirstOrDefault(e => e.Id == partido.EquipoLocalId);
+                var equipoVisitante = _context.Equipos.FirstOrDefault(e => e.Id == partido.EquipoVisitanteId);
+
+                _corriendo = false;
+                _marcador!.RelojCorriendo = false;
+
+                // Usar los equipos del partido
+                _marcador.EquipoLocalId = partido.EquipoLocalId;
+                _marcador.EquipoVisitanteId = partido.EquipoVisitanteId;
+                _marcador.EquipoLocal = equipoLocal ?? new Equipo { Id = partido.EquipoLocalId, Nombre = "Equipo A", Puntos = 0, Faltas = 0, Jugadores = new() };
+                _marcador.EquipoVisitante = equipoVisitante ?? new Equipo { Id = partido.EquipoVisitanteId, Nombre = "Equipo B", Puntos = 0, Faltas = 0, Jugadores = new() };
+
+                // Resetear estado del juego
+                _marcador.CuartoActual = 1;
+                _marcador.EnProrroga = false;
+                _marcador.NumeroProrroga = 0;
+                _marcador.EquipoLocal.Puntos = 0;
+                _marcador.EquipoLocal.Faltas = 0;
+                _marcador.EquipoVisitante.Puntos = 0;
+                _marcador.EquipoVisitante.Faltas = 0;
+                _marcador.TiempoRestante = Math.Max(1, _duracionActualSeg);
+
+                _context.SaveChanges();
+                return Proyeccion();
+            }
+        }
+
+        /// <summary>
         /// Termina el partido con motivo libre.
         /// </summary>
         public MarcadorGlobal TerminarPartido(string? motivo)
@@ -445,11 +483,11 @@ namespace MarcadorFaseIIApi.Services
                 EquipoLocalId = _marcador.EquipoLocalId,
                 EquipoVisitanteId = _marcador.EquipoVisitanteId,
 
-                NombreLocal = _marcador.EquipoLocal?.Nombre ?? "Local",
+                NombreLocal = _marcador.EquipoLocal?.Nombre ?? "Equipo A",
                 PuntosLocal = _marcador.EquipoLocal?.Puntos ?? 0,
                 FaltasLocal = _marcador.EquipoLocal?.Faltas ?? 0,
 
-                NombreVisitante = _marcador.EquipoVisitante?.Nombre ?? "Visitante",
+                NombreVisitante = _marcador.EquipoVisitante?.Nombre ?? "Equipo B",
                 PuntosVisitante = _marcador.EquipoVisitante?.Puntos ?? 0,
                 FaltasVisitante = _marcador.EquipoVisitante?.Faltas ?? 0,
 

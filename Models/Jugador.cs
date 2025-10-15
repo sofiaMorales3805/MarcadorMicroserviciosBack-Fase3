@@ -15,4 +15,8 @@ public class Jugador
     public string? Posicion { get; set; }
     public int EquipoId { get; set; }
     public Equipo Equipo { get; set; } = null!;
+    public string numero { get; set; } = string.Empty;
+    public int edad { get; set; }
+    public int estatura { get; set; }
+    public string nacionalidad { get; set; } = string.Empty;
 }

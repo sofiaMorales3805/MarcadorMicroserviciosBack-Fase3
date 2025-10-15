@@ -31,4 +31,8 @@ public class PartidoHistorico
         // Resultado administrativo
         public string Estado { get; set; } = "Terminado"; // “Terminado”, “Suspendido”, “Cancelado”
         public string? MotivoFin { get; set; }
+
+        // NUEVO (opcional para filtrar por temporada)
+        public int? TemporadaId { get; set; }
+        public Temporada? Temporada { get; set; }
 }

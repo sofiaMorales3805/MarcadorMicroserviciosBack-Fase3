@@ -4,6 +4,7 @@ using MarcadorFaseIIApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,13 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MarcadorFaseIIApi.Migrations
 {
     [DbContext(typeof(MarcadorDbContext))]
-    partial class MarcadorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250929233227_addPartidosTorneos")]
+    partial class addPartidosTorneos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.9")
+                .HasAnnotation("ProductVersion", "8.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -52,47 +55,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Equipos");
-                });
-
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.EstadisticaJugador", b =>
-                {
-                    b.Property<int>("EstadisticaJugadorId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadisticaJugadorId"));
-
-                    b.Property<int>("Asistencias")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Bloqueos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("JugadorId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Minutos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PartidoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Puntos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Rebotes")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Robos")
-                        .HasColumnType("int");
-
-                    b.HasKey("EstadisticaJugadorId");
-
-                    b.HasIndex("JugadorId");
-
-                    b.HasIndex("PartidoId");
-
-                    b.ToTable("EstadisticaJugador", (string)null);
                 });
 
             modelBuilder.Entity("MarcadorFaseIIApi.Models.Falta", b =>
@@ -147,20 +109,6 @@ namespace MarcadorFaseIIApi.Migrations
 
                     b.Property<int>("Puntos")
                         .HasColumnType("int");
-
-                    b.Property<int>("edad")
-                        .HasColumnType("int");
-
-                    b.Property<int>("estatura")
-                        .HasColumnType("int");
-
-                    b.Property<string>("nacionalidad")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("numero")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -305,9 +253,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.Property<int>("PuntosVisitante")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TemporadaId")
-                        .HasColumnType("int");
-
                     b.Property<int>("TiempoFinalSeg")
                         .HasColumnType("int");
 
@@ -316,8 +261,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.HasIndex("EquipoLocalId");
 
                     b.HasIndex("EquipoVisitanteId");
-
-                    b.HasIndex("TemporadaId");
 
                     b.ToTable("PartidosHistoricos");
                 });
@@ -339,75 +282,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.HasKey("PartidoId", "EquipoId", "JugadorId");
 
                     b.ToTable("PartidosJugadores");
-                });
-
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.PartidoJugadorStat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Asistencias")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Bloqueos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EquipoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FGA")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FGM")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FTA")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FTM")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Faltas")
-                        .HasColumnType("int");
-
-                    b.Property<int>("JugadorId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Minutos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PartidoId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Perdidas")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Puntos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Rebotes")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Robos")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TPA")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TPM")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("JugadorId");
-
-                    b.HasIndex("PartidoId", "JugadorId")
-                        .IsUnique();
-
-                    b.ToTable("PartidoJugadorStats");
                 });
 
             modelBuilder.Entity("MarcadorFaseIIApi.Models.RefreshToken", b =>
@@ -507,29 +381,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.ToTable("Series");
                 });
 
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.Temporada", b =>
-                {
-                    b.Property<int>("TemporadaId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TemporadaId"));
-
-                    b.Property<bool>("Activa")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Anio")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TemporadaId");
-
-                    b.ToTable("Temporada", (string)null);
-                });
-
             modelBuilder.Entity("MarcadorFaseIIApi.Models.Torneo", b =>
                 {
                     b.Property<int>("Id")
@@ -586,25 +437,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.EstadisticaJugador", b =>
-                {
-                    b.HasOne("MarcadorFaseIIApi.Models.Jugador", "Jugador")
-                        .WithMany()
-                        .HasForeignKey("JugadorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MarcadorFaseIIApi.Models.PartidoHistorico", "Partido")
-                        .WithMany()
-                        .HasForeignKey("PartidoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Jugador");
-
-                    b.Navigation("Partido");
-                });
-
             modelBuilder.Entity("MarcadorFaseIIApi.Models.Falta", b =>
                 {
                     b.HasOne("MarcadorFaseIIApi.Models.Equipo", "Equipo")
@@ -656,16 +488,6 @@ namespace MarcadorFaseIIApi.Migrations
                     b.Navigation("Serie");
                 });
 
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.PartidoHistorico", b =>
-                {
-                    b.HasOne("MarcadorFaseIIApi.Models.Temporada", "Temporada")
-                        .WithMany("Partidos")
-                        .HasForeignKey("TemporadaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Temporada");
-                });
-
             modelBuilder.Entity("MarcadorFaseIIApi.Models.PartidoJugador", b =>
                 {
                     b.HasOne("MarcadorFaseIIApi.Models.Partido", "Partido")
@@ -673,25 +495,6 @@ namespace MarcadorFaseIIApi.Migrations
                         .HasForeignKey("PartidoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Partido");
-                });
-
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.PartidoJugadorStat", b =>
-                {
-                    b.HasOne("MarcadorFaseIIApi.Models.Jugador", "Jugador")
-                        .WithMany()
-                        .HasForeignKey("JugadorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MarcadorFaseIIApi.Models.Partido", "Partido")
-                        .WithMany()
-                        .HasForeignKey("PartidoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Jugador");
 
                     b.Navigation("Partido");
                 });
@@ -734,11 +537,6 @@ namespace MarcadorFaseIIApi.Migrations
                 });
 
             modelBuilder.Entity("MarcadorFaseIIApi.Models.SeriePlayoff", b =>
-                {
-                    b.Navigation("Partidos");
-                });
-
-            modelBuilder.Entity("MarcadorFaseIIApi.Models.Temporada", b =>
                 {
                     b.Navigation("Partidos");
                 });
