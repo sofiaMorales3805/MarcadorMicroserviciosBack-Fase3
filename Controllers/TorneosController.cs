@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MarcadorFaseIIApi.Data;
@@ -27,6 +28,21 @@ namespace MarcadorFaseIIApi.Constrollers
         /// </summary>
         /// <param name="db">Contexto de base de datos.</param>
         public TorneosController(MarcadorDbContext db) { _db = db; }
+        
+	/// <summary>
+	/// Lista de torneos.
+	/// </summary>
+	[HttpGet]
+	[AllowAnonymous] // opcional
+	public async Task<IActionResult> GetAll(CancellationToken ct)
+	{
+	    var items = await _db.Torneos
+	        .OrderBy(t => t.Id)
+	        .Select(t => new { t.Id, t.Nombre }) // <-- solo campos existentes
+	        .ToListAsync(ct);
+	
+	    return Ok(items);
+	}
 
         // POST api/torneos
 
@@ -79,6 +95,7 @@ namespace MarcadorFaseIIApi.Constrollers
                 new TorneoDto(t.Id, t.Nombre, t.Temporada, t.BestOf, t.Estado.ToString()));
         }
 
+	
         /// <summary>
         /// Obtiene los datos de un torneo por su identificador.
         /// </summary>

@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using MarcadorFaseIIApi.Services;
 using MarcadorFaseIIApi.Models;
 using MarcadorFaseIIApi.Models.DTOs.Jugador;
 using MarcadorFaseIIApi.Models.DTOs.Common;
+using MarcadorFaseIIApi.Data;
 
 namespace MarcadorFaseIIApi.Controllers
 {
@@ -15,9 +18,13 @@ namespace MarcadorFaseIIApi.Controllers
     public class JugadoresController : ControllerBase
     {
         private readonly JugadorService _service;
+	private readonly MarcadorDbContext _db;
 
-        public JugadoresController(JugadorService service) => _service = service;
-
+	public JugadoresController(JugadorService service, MarcadorDbContext db)
+        {
+           _service = service;
+           _db = db;
+        }
         // ---------------------------------------------------------------------
         // GET api/jugadores
         // ---------------------------------------------------------------------
@@ -73,7 +80,44 @@ namespace MarcadorFaseIIApi.Controllers
             var dtos = items.Select(ToDto).ToList();
             return Ok(new PagedResult<JugadorResponseDto>(dtos, total, page, pageSize));
         }
+       
+	// --------------------------------------------------------------
+	// POST api/jugadores
+	// --------------------------------------------------------------
+	[HttpPost]
+        [AllowAnonymous]
+	[ProducesResponseType(typeof(JugadorResponseDto), StatusCodes.Status201Created)]
+	[ProducesResponseType(StatusCodes.Status400BadRequest)]
+	public async Task<ActionResult<JugadorResponseDto>> Create([FromBody] JugadorCreateDto dto, CancellationToken ct)
+	{
+	
+	if (string.IsNullOrWhiteSpace(dto.Nombre) || dto.EquipoId <= 0)
+		return BadRequest("Nombre y EquipoId son obligatorios.");
 
+	var existeEquipo = await _db.Equipos.AnyAsync(e => e.Id == dto.EquipoId, ct);
+	if (!existeEquipo)
+	  return BadRequest("El equipo no existe.");
+	
+	var entity = new Jugador
+        {   
+	    Nombre = dto.Nombre.Trim(),
+            EquipoId = dto.EquipoId,
+	    Posicion = dto.Posicion,
+            numero = dto.Numero?.ToString() ?? string.Empty,
+	    edad = dto.Edad ?? 0,
+            estatura = dto.Estatura ?? 0,
+	    nacionalidad = dto.Nacionalidad ?? string.Empty,
+            // Puntos/Faltas arrancan en 0
+		    Puntos = 0,
+	            Faltas = 0
+	};
+
+	        _db.Jugadores.Add(entity);
+	        await _db.SaveChangesAsync(ct);
+
+	        entity.Equipo = await _db.Equipos.FindAsync(new object?[] { entity.EquipoId }, ct);
+	        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, ToDto(entity));
+	    }
         // ---------------------------------------------------------------------
         // Mapeando entidad -> DTO
         // ---------------------------------------------------------------------

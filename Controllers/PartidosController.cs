@@ -25,6 +25,12 @@ namespace MarcadorFaseIIApi.Controllers
 
         public PartidosController(MarcadorDbContext db) => _db = db;
 
+        ///GET ALL Partidos
+        [HttpGet]
+        [ProducesResponseType(typeof(CommonDtos.PagedResult<PartidoDto>), StatusCodes.Status200OK)]
+        public Task<ActionResult<CommonDtos.PagedResult<PartidoDto>>> GetAll([FromQuery] PartidoQuery q)
+           => Historial(q);
+
         // =========================================================================
         // PUT: api/partidos/{id}/marcador
         // =========================================================================
